@@ -1,0 +1,171 @@
+import tkinter as tk
+from tkinter import messagebox
+
+class LibraryBookTracker:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Library Book Tracker")
+
+        # Initialize the book list
+        self.books = []
+
+        # Main Menu
+        self.main_menu()
+
+    def main_menu(self):
+        # Clear the window
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        # Title Label
+        title_label = tk.Label(self.root, text="Library Book Tracker", font=("Helvetica", 16))
+        title_label.pack(pady=10)
+
+        # Buttons for navigation
+        add_book_button = tk.Button(self.root, text="Add Book", width=20, command=self.add_book_window)
+        add_book_button.pack(pady=5)
+
+        view_books_button = tk.Button(self.root, text="View Book List", width=20, command=self.view_books_window)
+        view_books_button.pack(pady=5)
+
+        # Exit Button
+        exit_button = tk.Button(self.root, text="Exit", width=20, command=self.root.quit)
+        exit_button.pack(pady=5)
+
+    def add_book_window(self):
+        # Clear the window
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        # Title Label
+        add_book_label = tk.Label(self.root, text="Add New Book", font=("Helvetica", 16))
+        add_book_label.pack(pady=10)
+
+        # Input fields
+        title_label = tk.Label(self.root, text="Book Title")
+        title_label.pack(pady=5)
+        self.book_title_entry = tk.Entry(self.root, width=30)
+        self.book_title_entry.pack(pady=5)
+
+        author_label = tk.Label(self.root, text="Author")
+        author_label.pack(pady=5)
+        self.author_entry = tk.Entry(self.root, width=30)
+        self.author_entry.pack(pady=5)
+
+        status_label = tk.Label(self.root, text="Reading Status")
+        status_label.pack(pady=5)
+        self.status_var = tk.StringVar(value="Want to Read")
+        status_dropdown = tk.OptionMenu(self.root, self.status_var, "Want to Read", "Currently Reading", "Read")
+        status_dropdown.pack(pady=5)
+
+        # Buttons for saving or canceling
+        save_button = tk.Button(self.root, text="Save", width=20, command=self.save_book)
+        save_button.pack(pady=5)
+
+        cancel_button = tk.Button(self.root, text="Cancel", width=20, command=self.main_menu)
+        cancel_button.pack(pady=5)
+
+        # Return to Main Menu button
+        return_button = tk.Button(self.root, text="Return to Main Menu", width=20, command=self.main_menu)
+        return_button.pack(pady=5)
+
+    def save_book(self):
+        # Retrieve the entered data
+        title = self.book_title_entry.get()
+        author = self.author_entry.get()
+        status = self.status_var.get()
+
+        # Validate the input
+        if not title or not author:
+            messagebox.showerror("Input Error", "Both fields must be filled in.")
+            return
+
+        # Save the book
+        book = {"title": title, "author": author, "status": status}
+        self.books.append(book)
+        messagebox.showinfo("Book Added", f"'{title}' by {author} has been added.")
+        
+        # Return to Main Menu
+        self.main_menu()
+
+    def view_books_window(self):
+        # Clear the window
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        # Title Label
+        view_books_label = tk.Label(self.root, text="View Book List", font=("Helvetica", 16))
+        view_books_label.pack(pady=10)
+
+        # Display books in a listbox
+        book_listbox = tk.Listbox(self.root, width=50, height=10)
+        for book in self.books:
+            book_listbox.insert(tk.END, f"{book['title']} by {book['author']} - {book['status']}")
+        book_listbox.pack(pady=10)
+
+        # Buttons for updating or deleting books
+        update_button = tk.Button(self.root, text="Update Book", width=20, command=lambda: self.update_book(book_listbox))
+        update_button.pack(pady=5)
+
+        delete_button = tk.Button(self.root, text="Delete Book", width=20, command=lambda: self.delete_book(book_listbox))
+        delete_button.pack(pady=5)
+
+        # Return to Main Menu button
+        return_button = tk.Button(self.root, text="Return to Main Menu", width=20, command=self.main_menu)
+        return_button.pack(pady=5)
+
+    def update_book(self, listbox):
+        # Get the selected book
+        selected_index = listbox.curselection()
+        if not selected_index:
+            messagebox.showerror("Selection Error", "Please select a book to update.")
+            return
+
+        book = self.books[selected_index[0]]
+        new_status = self.get_status_for_update(book)
+
+        if new_status:
+            book['status'] = new_status
+            messagebox.showinfo("Book Updated", f"The status of '{book['title']}' has been updated to '{new_status}'.")
+            self.view_books_window()
+
+    def delete_book(self, listbox):
+        # Get the selected book
+        selected_index = listbox.curselection()
+        if not selected_index:
+            messagebox.showerror("Selection Error", "Please select a book to delete.")
+            return
+
+        book = self.books[selected_index[0]]
+        self.books.remove(book)
+        messagebox.showinfo("Book Deleted", f"'{book['title']}' has been deleted.")
+        self.view_books_window()
+
+    def get_status_for_update(self, book):
+        # Create a window for the user to select the new status for the book
+        status_window = tk.Toplevel(self.root)
+        status_window.title("Update Book Status")
+
+        status_label = tk.Label(status_window, text="Select New Status", font=("Helvetica", 12))
+        status_label.pack(pady=10)
+
+        status_var = tk.StringVar(value=book['status'])
+        status_dropdown = tk.OptionMenu(status_window, status_var, "Want to Read", "Currently Reading", "Read")
+        status_dropdown.pack(pady=5)
+
+        def save_update():
+            new_status = status_var.get()
+            status_window.destroy()
+            return new_status
+
+        update_button = tk.Button(status_window, text="Save", command=save_update)
+        update_button.pack(pady=10)
+
+        status_window.mainloop()
+        return status_var.get()
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = LibraryBookTracker(root)
+    root.mainloop()
